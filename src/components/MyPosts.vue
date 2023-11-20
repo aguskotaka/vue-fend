@@ -18,7 +18,7 @@
                         <label>News :</label>
                         <textarea v-model="post.updatedNews" required></textarea>
                         <label>Image :</label>
-                        <input type="file" id="image" ref="image" @change="onFileChange" accept="image/*" />
+                        <input type="file" id="image" ref="image" @change="onFileChange($event, post)" accept="image/*" />
                         <button type="submit">Update</button>
                     </form>
                 </div>
@@ -26,7 +26,7 @@
         </ul>
     </div>
 </template>
-
+  
 <script>
 import axios from "axios";
 
@@ -37,11 +37,6 @@ export default {
             password: "",
             token: localStorage.getItem("token"),
             posts: [],
-            post: {
-                updatedTitle: "",
-                updatedNews: "",
-                updatedImage: null,
-            },
         };
     },
     methods: {
@@ -75,16 +70,14 @@ export default {
         },
         deletePost(postId) {
             if (this.token) {
-                axios.post(`http://127.0.0.1:8000/api/posts/${post.id}`, formData, {
-                    method: 'POST', // Set the method to POST
-                    headers: {
-                        Authorization: `Bearer ${this.token}`,
-                        'Content-Type': 'multipart/form-data',
-                    },
-                })
+                axios
+                    .delete(`http://127.0.0.1:8000/api/posts/${postId}`, {
+                        headers: {
+                            Authorization: `Bearer ${this.token}`,
+                        },
+                    })
                     .then(() => {
-                        // If deletion is successful, update the posts array
-                        this.posts = this.posts.filter((post) => post.id !== postId);
+                        this.fetchData();
                     })
                     .catch((error) => {
                         console.error("Error deleting post:", error);
@@ -94,31 +87,30 @@ export default {
             }
         },
         editPost(post) {
-
             post.editing = true;
         },
         updatePost(post) {
             if (this.token) {
                 const formData = new FormData();
-
-                formData.append("_method", "PATCH");  // Add this line
-
                 formData.append("title", post.updatedTitle);
                 formData.append("news", post.updatedNews);
 
-                console.log(formData);
+                
 
                 // Check if the image is present
                 if (post.updatedImage) {
                     formData.append("image", post.updatedImage);
                 }
 
-                axios.post(`http://127.0.0.1:8000/api/posts/${post.id}`, formData, {
-                    headers: {
-                        Authorization: `Bearer ${this.token}`,
-                        "Content-Type": "multipart/form-data",
-                    },
-                })
+                formData.append("_method", "PATCH");
+                console.log(formData);
+                axios
+                    .post(`http://127.0.0.1:8000/api/posts/${post.id}`, formData, {
+                        headers: {
+                            Authorization: `Bearer ${this.token}`,
+                            "Content-Type": "multipart/form-data",
+                        },
+                    })
                     .then(() => {
                         post.editing = false;
                         this.fetchData();
@@ -130,11 +122,15 @@ export default {
                 console.error("Token belum ada, Login dulu ya.");
             }
         },
+        onFileChange(event, post) {
+    post.updatedImage = event.target.files[0];
+},
 
-
+        
     },
     mounted() {
         this.fetchData();
     },
 };
 </script>
+  

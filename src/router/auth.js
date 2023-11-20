@@ -7,6 +7,7 @@ import Logout from "../components/Logout.vue";
 import Posts from "../components/Posts.vue";
 import MyPosts from "../components/MyPosts.vue";
 import PostsCreate from "../components/PostsCreate.vue";
+import PostsUpdate from "../components/PostsUpdate.vue";
 
 const routes = [
   { path: "/userpage", component: UserPage },
@@ -15,6 +16,7 @@ const routes = [
   { path: "/logout", component: Logout },
   { path: "/register", component: Register },
   { path: "/postscreate", component: PostsCreate},
+  { path: "/postsupdate/:postId", name: "PostUpdate", component: PostsUpdate, props: true },
   { path: "/posts", component: Posts},
   { path: "/myposts", component: MyPosts},
   // ...rute-rute lainnya sesuai kebutuhan Anda
