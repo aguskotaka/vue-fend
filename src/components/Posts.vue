@@ -18,14 +18,19 @@
             <p>{{ comment.comments_content }}</p>
             <p v-if="comment.commentator">Commentator: {{ comment.commentator.username }}</p>
             <p v-else>Commentator: </p>
+            
+            <!-- Display edit and delete options only if the current user is the comment author -->
+            <div v-if="isCommentAuthor(comment)">
+              <button @click="editComment(comment.id)">Edit</button>
+              <button @click="deleteComment(comment.id)">Delete</button>
+            </div>
           </li>
         </ul>
-
       </li>
     </ul>
   </div>
 </template>
-  
+
 <script>
 import axios from "axios";
 
@@ -88,16 +93,19 @@ export default {
             post.newComment = ""; // Clear the comment input field
           })
           .catch((error) => {
-            console.error("Error adding comment:", error);
+            console.error('Error adding comment:', error);
           });
       } else {
-        console.error("Comment content is required.");
+        console.error('Comment content is required.');
       }
     },
+    saveEditedComment(){
+      
+    }
   },
   mounted() {
-    this.fetchData();
-  },
+  this.fetchData();
+  }
 };
 </script>
   
