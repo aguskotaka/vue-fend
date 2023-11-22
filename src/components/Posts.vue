@@ -53,23 +53,39 @@ export default {
       return `${baseUrl}/storage/posts/${imageFileName}`;
     },
     fetchData() {
-      if (this.token) {
+  if (this.token) {
+    axios
+      .get("http://127.0.0.1:8000/api/posts", {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
+      })
+      .then((response) => {
+        this.posts = response.data.data;
+
+        // Fetch authenticated user data
         axios
-          .get("http://127.0.0.1:8000/api/posts", {
+          .get("http://127.0.0.1:8000/api/me", {
             headers: {
               Authorization: `Bearer ${this.token}`,
             },
           })
-          .then((response) => {
-            this.posts = response.data.data;
+          .then((userResponse) => {
+            this.currentUser = userResponse.data;
           })
-          .catch((error) => {
-            console.error("Error fetching data:", error);
+          .catch((userError) => {
+            console.error("Error fetching user data:", userError);
           });
-      } else {
-        console.error("Token tidak ditemukan. Silakan login terlebih dahulu.");
-      }
-    },
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
+  } else {
+    console.error("Token tidak ditemukan. Silakan login terlebih dahulu.");
+  }
+},
+
+
     // INI BAGIAN COMMENT ========================================================================================================================
     isCommentAuthor(comment) {
       console.log('Pengguna ID:', this.currentUser.id);
@@ -81,7 +97,15 @@ export default {
         comment.commentator.id === this.currentUser.id
       );
     },
-
+    findCommentById(commentId) {
+    for (const post of this.posts) {
+      const foundComment = post.comments.find((comment) => comment.id === commentId);
+      if (foundComment) {
+        return foundComment;
+      }
+    }
+    return null;
+  },
     addComment(postId) {
       const post = this.posts.find((p) => p.id === postId);
 
@@ -112,10 +136,14 @@ export default {
       }
     },
     editComment(commentId) {
-      const comment = this.findCommentById(commentId);
+    const comment = this.findCommentById(commentId);
+    if (comment) {
       this.editedCommentId = commentId;
       this.editCommentContent = comment.comments_content;
-    },
+    } else {
+      console.error(`Comment with ID ${commentId} not found.`);
+    }
+  },
     saveEditedComment(commentId) {
       axios.patch(`http://127.0.0.1:8000/api/comment/${commentId}`, {
         comments_content: this.editCommentContent,
@@ -143,15 +171,20 @@ export default {
     },
 
     deleteComment(commentId) {
-      axios.delete(`http://127.0.0.1:8000/api/comment/${commentId}`)
+      axios.delete(`http://127.0.0.1:8000/api/comment/${commentId}`,{
+        headers:{
+          Authorization: `Bearer ${this.token}`,
+        }
+      })
         .then(response => {
           const post = this.posts.find(post => post.comments.some(comment => comment.id === commentId));
           const commentIndex = post.comments.findIndex(comment => comment.id === commentId);
           post.comments.splice(commentIndex, 1);
-
+          alert('Comment deleted successfully!');
         })
         .catch(error => {
           console.error('Gagal Menghapus Comment: ', error);
+          alert('Failed to delete comment. Please try again.');
         });
     },
 
@@ -164,46 +197,3 @@ export default {
 };
 </script>
   
-<!-- saveEditedComment() {
-  if (this.editedCommentId !== null) {
-    const editedComment = this.findCommentById(this.editedCommentId);
-
-    if (editedComment) {
-      axios
-        .patch(`http://127.0.0.1:8000/api/comment/${this.editedCommentId}`,
-          {
-            comments_content: this.editCommentContent,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${this.token}`,
-            },
-          }
-        )
-        .then((response) => {
-          editedComment.comments_content = response.data.data.comments_content;
-
-          this.editedCommentId = null;
-          this.editCommentContent = '';
-
-        })
-        .catch((error) => {
-          console.error('Error saat update comment', error);
-        })
-    } else {
-      console.error('Comment tidak ditemukan', error);
-    }
-  }else{
-    console.error('Tidak ada Comment yang dipilih', error);
-}
-
-},
-findCommentById() {
-  for (const post of this.posts) {
-    const foundComment = post.comment.find((comment) => comment.id === commentId);
-    if (foundComment) {
-      return foundComment;
-    }
-  }
-  return null;
-}, -->
