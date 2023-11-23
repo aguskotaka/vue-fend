@@ -15,14 +15,19 @@
         </form>
         <ul>
           <li v-for="comment in post.comments" :key="comment.id">
-            <p>{{ comment.comments_content }}</p>
-            <p v-if="comment.commentator">Commentator: {{ comment.commentator.username }}</p>
-            <p v-else>Commentator: </p>
-
-            <!-- Display edit and delete options only if the current user is the comment author -->
-            <div v-if="isCommentAuthor(comment)">
-              <button @click="editComment(comment.id)">Edit</button>
-              <button @click="deleteComment(comment.id)">Delete</button>
+            <div v-if="editedCommentId === comment.id">
+              <input v-model="editCommentContent" type="text" />
+              <button @click="saveEditedComment(comment.id)">Save</button>
+              <button @click="cancelEdit">Cancel</button>
+            </div>
+            <div v-else>
+              <p>{{ comment.comments_content }}</p>
+              <p v-if="comment.commentator">Commentator: {{ comment.commentator.username }}</p>
+              <p v-else>Commentator: </p>
+              <div v-if="isCommentAuthor(comment)">
+                <button @click="editComment(comment.id)">Edit</button>
+                <button @click="deleteComment(comment.id)">Delete</button>
+              </div>
             </div>
           </li>
         </ul>
@@ -42,6 +47,7 @@ export default {
       token: localStorage.getItem("token"),
       posts: [],
       currentUser: {},
+      editedCommentId: null,
     };
   },
   methods: {
