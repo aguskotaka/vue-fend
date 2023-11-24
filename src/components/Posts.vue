@@ -18,7 +18,7 @@
             <p>{{ comment.comments_content }}</p>
             <p v-if="comment.commentator">Commentator: {{ comment.commentator.username }}</p>
             <p v-else>Commentator: </p>
-            
+
             <!-- Display edit and delete options only if the current user is the comment author -->
             <div v-if="isCommentAuthor(comment)">
               <button @click="editComment(comment.id)">Edit</button>
@@ -41,6 +41,7 @@ export default {
       password: "",
       token: localStorage.getItem("token"),
       posts: [],
+      currentUser: {},
     };
   },
   methods: {
@@ -69,6 +70,18 @@ export default {
         console.error("Token tidak ditemukan. Silakan login terlebih dahulu.");
       }
     },
+    // INI BAGIAN COMMENT ========================================================================================================================
+    isCommentAuthor(comment) {
+      console.log('Pengguna ID:', this.currentUser.id);
+      console.log('Commentator ID:', comment.commentator ? comment.commentator.id : null);
+
+      return (
+        this.token &&
+        comment.commentator &&
+        comment.commentator.id === this.currentUser.id
+      );
+    },
+
     addComment(postId) {
       const post = this.posts.find((p) => p.id === postId);
 
@@ -87,10 +100,9 @@ export default {
             }
           )
           .then((response) => {
-            // Assuming the API returns the newly created comment
             const newComment = response.data.data;
             post.comments.push(newComment);
-            post.newComment = ""; // Clear the comment input field
+            post.newComment = "";
           })
           .catch((error) => {
             console.error('Error adding comment:', error);
@@ -99,13 +111,99 @@ export default {
         console.error('Comment content is required.');
       }
     },
-    saveEditedComment(){
-      
-    }
+    editComment(commentId) {
+      const comment = this.findCommentById(commentId);
+      this.editedCommentId = commentId;
+      this.editCommentContent = comment.comments_content;
+    },
+    saveEditedComment(commentId) {
+      axios.patch(`http://127.0.0.1:8000/api/comment/${commentId}`, {
+        comments_content: this.editCommentContent,
+      }, {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
+      })
+        .then(response => {
+          const editedComment = response.data.data;
+          const postIndex = this.posts.findIndex(post => post.comments.some(comment => comment.id === commentId));
+          const commentIndex = this.posts[postIndex].comments.findIndex(comment => comment.id === commentId);
+          this.posts[postIndex].comments.splice(commentIndex, 1, editedComment);
+          this.editedCommentId = null;
+          this.editCommentContent = '';
+        })
+        .catch(error => {
+          console.error('Error editing comment:', error);
+        });
+    },
+
+    cancelEdit() {
+      this.editedCommentId = null;
+      this.editCommentContent = '';
+    },
+
+    deleteComment(commentId) {
+      axios.delete(`http://127.0.0.1:8000/api/comment/${commentId}`)
+        .then(response => {
+          const post = this.posts.find(post => post.comments.some(comment => comment.id === commentId));
+          const commentIndex = post.comments.findIndex(comment => comment.id === commentId);
+          post.comments.splice(commentIndex, 1);
+
+        })
+        .catch(error => {
+          console.error('Gagal Menghapus Comment: ', error);
+        });
+    },
+
+    // INI BAGIAN COMMENT ========================================================================================================================
+
   },
   mounted() {
-  this.fetchData();
+    this.fetchData();
   }
 };
 </script>
   
+<!-- saveEditedComment() {
+  if (this.editedCommentId !== null) {
+    const editedComment = this.findCommentById(this.editedCommentId);
+
+    if (editedComment) {
+      axios
+        .patch(`http://127.0.0.1:8000/api/comment/${this.editedCommentId}`,
+          {
+            comments_content: this.editCommentContent,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${this.token}`,
+            },
+          }
+        )
+        .then((response) => {
+          editedComment.comments_content = response.data.data.comments_content;
+
+          this.editedCommentId = null;
+          this.editCommentContent = '';
+
+        })
+        .catch((error) => {
+          console.error('Error saat update comment', error);
+        })
+    } else {
+      console.error('Comment tidak ditemukan', error);
+    }
+  }else{
+    console.error('Tidak ada Comment yang dipilih', error);
+}
+
+},
+findCommentById() {
+  for (const post of this.posts) {
+    const foundComment = post.comment.find((comment) => comment.id === commentId);
+    if (foundComment) {
+      return foundComment;
+    }
+  }
+  return null;
+}, -->
